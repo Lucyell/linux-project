@@ -1,0 +1,105 @@
+org 0x7C00
+bits 16
+
+start:
+    mov ax, 0xB800
+    mov es, ax
+    xor di, di
+    mov byte [direction], 0
+    mov byte [char], 'A'
+    mov byte [counter], 0
+    mov byte [bg_color], 0x10  ; 初始背景色（蓝色）
+    mov byte [fg_color], 0x0F  ; 初始前景色（白色）
+    call update_color          ; 初始化颜色
+
+main_loop:
+
+    ; 计算新位置
+    cmp byte [direction], 0
+    je move_right
+    cmp byte [direction], 1
+    je move_down
+    cmp byte [direction], 2
+    je move_left
+    jmp move_up
+
+move_right:
+    add di, 2
+    cmp di, 158
+    jl move_done
+    mov byte [direction], 1
+    jmp move_done
+
+move_down:
+    add di, 160
+    cmp di, 3840
+    jl move_done
+    mov byte [direction], 2
+    jmp move_done
+
+move_left:
+    sub di, 2
+    cmp di, 3840
+    jg move_done
+    mov byte [direction], 3
+    jmp move_done
+
+move_up:
+    sub di, 160
+    cmp di, 158
+    jg move_done
+    mov byte [direction], 0
+
+move_done:
+    ; 更新计数器
+    inc byte [counter]
+    cmp byte [counter], 6
+    jb skip_color_update       ; 计数器<6时不更新颜色
+    
+    ; 每6个字符更新一次颜色
+    call update_color
+    mov byte [counter], 0      ; 重置计数器
+
+skip_color_update:
+    ; 更新字符
+    inc byte [char]
+    cmp byte [char], 'Z'
+    jle .char_ok
+    mov byte [char], 'A'
+
+.char_ok:
+    ; 写入新字符
+    mov al, [char]
+    mov ah, [color]
+    mov [es:di], ax
+
+    ; 调整速度
+    mov ecx, 0x02000000
+delay:
+    dec ecx
+    jnz delay
+
+    jmp main_loop
+
+; 子程序：更新颜色属性
+update_color:
+    inc byte [bg_color]
+    inc byte [fg_color]
+    and byte [bg_color], 0x0F  ; 背景色范围0-15
+    and byte [fg_color], 0x0F  ; 前景色范围0-15
+    mov al, [bg_color]
+    shl al, 4
+    or al, [fg_color]
+    mov [color], al
+    ret
+
+; 数据段
+direction db 0
+char db 0
+counter db 0
+bg_color db 0
+fg_color db 0
+color db 0
+
+times 510-($-$$) db 0
+dw 0xAA55

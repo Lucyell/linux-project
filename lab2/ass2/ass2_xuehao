@@ -1,0 +1,43 @@
+org 0x7C00
+bits 16
+
+start:
+    xor ax, ax          ; 初始化段寄存器
+    mov ds, ax
+    mov es, ax
+
+    ; 设置初始光标位置（行=10，列=16）
+    mov ah, 0x02        ; 功能号：设置光标位置
+    mov bh, 0x00
+    mov dh, 10
+    mov dl, 16
+    int 0x10
+
+    mov si, msg         ; SI 指向字符串
+    mov bl, 0x0F        ; 颜色属性（白底黑字）
+    mov cx, 1           ; 每个字符重复1次
+
+print_loop:
+    lodsb               ; 加载字符到 AL
+    test al, al         ; 检查是否到字符串结尾（0）
+    jz halt
+
+    ; 在当前光标位置写字符和颜色
+    mov ah, 0x09        ; 功能号：写字符和属性
+    mov bh, 0x00
+    int 0x10
+
+    ; 移动光标到下一列（DL+1）
+    inc dl              ; 列号+1
+    mov ah, 0x02        ; 功能号：设置光标位置
+    int 0x10
+
+    jmp print_loop
+
+halt:
+    jmp $
+
+msg db '23336289', 0    ; 字符串以 0 结尾
+
+times 510 - ($-$$) db 0
+dw 0xAA55

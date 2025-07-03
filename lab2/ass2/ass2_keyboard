@@ -1,0 +1,68 @@
+org 0x7C00
+bits 16
+
+start:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+
+    ; 初始化光标位置
+    mov dh, 12
+    mov dl, 0
+    call set_cursor
+
+kbIOint:
+    ; 读取键盘输入
+    mov ah, 0x00
+    int 0x16
+
+    ; 处理回车键 (ASCII 0x0D)
+    cmp al, 0x0D
+    je halt
+
+    ; 处理退格键 (ASCII 0x08)
+    cmp al, 0x08
+    je handle_backspace
+
+    ; 正常字符回显
+    call print_char  ; 显示字符并移动光标
+    jmp kbIOint
+
+handle_backspace:
+    ; 如果已在行首（DL=0），则忽略
+    cmp dl, 0
+    jbe kbIOint
+
+    ; 退格逻辑：左移光标并覆盖为空格
+    dec dl
+    call set_cursor
+
+    mov al, ' '      ; 用空格覆盖原字符
+    call print_char  ; 显示空格
+
+    dec dl           ; 再次左移光标（因为 print_char 会 inc dl）
+    call set_cursor
+    jmp kbIOint
+
+print_char:
+    ; 功能：显示字符并移动光标 (INT 10h, AH=0x0E)
+    mov ah, 0x0E     ; 功能号：显示字符并自动前进光标
+    mov bh, 0x00
+    int 0x10
+
+    ; 更新列号
+    inc dl
+    ret
+
+set_cursor:
+    ; 功能：设置光标位置
+    mov ah, 0x02
+    mov bh, 0x00
+    int 0x10
+    ret
+
+halt:
+    jmp $
+
+times 510 - ($-$$) db 0
+dw 0xAA55

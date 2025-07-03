@@ -1,0 +1,24 @@
+org 0x7C00
+bits 16
+
+start:
+    mov ax, 0xB800
+    mov es, ax
+    mov di, (10 * 80 + 16) * 2
+    mov si, msg
+    mov ah, 0x0F
+
+print_loop:
+    lodsb 
+    test al, al
+    jz halt
+    stosw
+    jmp print_loop
+
+halt:
+    jmp $
+
+msg db '23336289', 0
+
+times 510 - ($-$$) db 0
+dw 0xAA55

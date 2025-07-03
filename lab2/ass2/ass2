@@ -1,0 +1,42 @@
+org 0x7C00
+bits 16
+
+start:
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+
+    ; 获取当前光标位置
+    mov ah, 0x03
+    mov bh, 0x00 
+    int 0x10
+
+    ; 在光标位置显示字符 'X'
+    mov ah, 0x09
+    mov al, 'X'
+    mov bh, 0x00
+    mov bl, 0x0F
+    mov cx, 1
+    int 0x10
+
+    ; 移动光标到新位置
+    mov ah, 0x02
+    mov bh, 0x00
+    add dh, 1 ; 
+    add dl, 1 ; 
+    int 0x10
+
+    ; 在光标新位置显示字符 'Y'
+    mov ah, 0x09
+    mov al, 'Y'
+    mov bh, 0x00
+    mov bl, 0x0F
+    mov cx, 1
+    int 0x10
+
+    ; 无限循环
+    cli
+    hlt
+
+times 510-($-$$) db 0
+dw 0xAA55
